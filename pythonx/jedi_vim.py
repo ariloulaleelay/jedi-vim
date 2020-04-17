@@ -109,6 +109,10 @@ jedi_path = os.path.join(os.path.dirname(__file__), 'jedi')
 sys.path.insert(0, jedi_path)
 parso_path = os.path.join(os.path.dirname(__file__), 'parso')
 sys.path.insert(0, parso_path)
+additional_paths = vim_eval('g:jedi#extra_path')
+if additional_paths:
+    for path in additional_paths:
+        sys.path.append(path)
 
 try:
     import jedi
