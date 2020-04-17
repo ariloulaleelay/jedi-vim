@@ -109,10 +109,7 @@ jedi_path = os.path.join(os.path.dirname(__file__), 'jedi')
 sys.path.insert(0, jedi_path)
 parso_path = os.path.join(os.path.dirname(__file__), 'parso')
 sys.path.insert(0, parso_path)
-additional_paths = vim_eval('g:jedi#extra_path')
-if additional_paths:
-    for path in additional_paths:
-        sys.path.append(path)
+
 
 try:
     import jedi
@@ -260,11 +257,6 @@ def get_known_environments():
 
 @catch_and_print_exceptions
 def get_script(source=None, column=None):
-    jedi.settings.additional_dynamic_modules = [
-        b.name for b in vim.buffers if (
-            b.name is not None and
-            b.name.endswith('.py') and
-            b.options['buflisted'])]
     if source is None:
         source = '\n'.join(vim.current.buffer)
     row = vim.current.window.cursor[0]
@@ -272,10 +264,26 @@ def get_script(source=None, column=None):
         column = vim.current.window.cursor[1]
     buf_path = vim.current.buffer.name
 
+    added_sys_path = vim_eval('g:jedi#extra_path') or []
+    added_sys_path.extend([
+        b.name for b in vim.buffers if (
+            b.name is not None and
+            b.name.endswith('.py') and
+            b.options['buflisted']
+        )
+    ])
+
+    # TODO there must be better way to pass added_sys_path
+    project = jedi.api.Project(
+        jedi.api.get_default_project(os.path.dirname(buf_path))._path,
+        added_sys_path=added_sys_path
+    )
+
     return jedi.Script(
         source, row, column, buf_path,
         encoding=vim_eval('&encoding') or 'latin1',
         environment=get_environment(),
+        project=project,
     )
 
 
